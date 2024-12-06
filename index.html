@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Canales</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #0078d7;
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+        }
+        .container {
+            margin: 2rem auto;
+            max-width: 600px;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .search-box {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-box button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background-color: #0078d7;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-box button:hover {
+            background-color: #005fa3;
+        }
+        .results {
+            margin-top: 1rem;
+        }
+        .results .card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+        .results .card h3 {
+            margin: 0 0 0.5rem;
+            color: #333;
+        }
+        .results .card p {
+            margin: 0.2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Buscador de Canales</h1>
+    </header>
+    <div class="container">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Busca por nombre o número de canal">
+            <button onclick="searchChannel()">Buscar</button>
+        </div>
+        <div class="results" id="results">
+            <!-- Los resultados se mostrarán aquí -->
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBoMllya1uj7Wu7Kq5gZY2ZZEbAJhUi7jw",
+            authDomain: "grilla-2a75e.firebaseapp.com",
+            databaseURL: "https://grilla-2a75e-default-rtdb.firebaseio.com",
+            projectId: "grilla-2a75e",
+            storageBucket: "grilla-2a75e.firebasestorage.app",
+            messagingSenderId: "24461514405",
+            appId: "1:24461514405:web:de78d8367766f8e33e5f4c"
+        };
+
+        
+        // Inicializar Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database(app);
+
+        // Buscar un canal por nombre o número
+        function searchChannel() {
+    const query = document.getElementById("searchInput").value.toLowerCase();
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = ""; // Limpiar resultados previos
+
+    if (!query) {
+        resultsDiv.innerHTML = "<p>Por favor, ingresa un nombre o número de canal.</p>";
+        return;
+    }
+
+    // Depuración
+    console.log("Iniciando búsqueda con query:", query);
+
+    // Referencia a la base de datos
+    const channelsRef = database.ref("channels");
+    channelsRef.once("value")
+        .then((snapshot) => {
+            const channels = snapshot.val();
+            console.log("Datos obtenidos de Firebase:", channels);
+
+            let found = false;
+            for (const key in channels) {
+                const channel = channels[key];
+                const canalId = channel.canal_id || "";
+                const nombreCanal = channel.nombre_canal || "";
+
+                // Depuración
+                console.log(`Verificando canal: ${canalId} - ${nombreCanal}`);
+
+                if (nombreCanal.toLowerCase().includes(query) || canalId.toString().includes(query)) {
+                    found = true;
+                    // Mostrar información del canal
+                    const card = document.createElement("div");
+                    card.className = "card";
+                    card.innerHTML = `
+                        <h3>${canalId} - ${nombreCanal}</h3>
+                        <p><strong>Satelite:</strong> ${channel.satelite || "N/A"}</p>
+                        <p><strong>Frecuencia:</strong> ${channel.frecuencia || "N/A"}</p>
+                        <p><strong>Polarización:</strong> ${channel.polarizacion || "N/A"}</p>
+                        <p><strong>Multicast:</strong> ${channel.multicast || "N/A"}</p>
+                    `;
+                    resultsDiv.appendChild(card);
+                }
+            }
+
+            if (!found) {
+                resultsDiv.innerHTML = "<p>No se encontró ningún canal con ese nombre o número.</p>";
+            }
+        })
+        .catch((error) => {
+            console.error("Error al obtener datos de Firebase:", error);
+            resultsDiv.innerHTML = `<p>Error al buscar datos. Por favor, revisa la consola para más detalles.</p>`;
+        });
+}
+    </script>
+</body>
+</html>
